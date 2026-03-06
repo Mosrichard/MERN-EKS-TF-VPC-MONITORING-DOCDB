@@ -2,6 +2,10 @@ name: Deploy to EKS
 
 on:
   workflow_call:
+    inputs:
+      secret_name:
+        required: true
+        type: string
 
 
 jobs:
@@ -37,6 +41,11 @@ jobs:
     - name: Ensure Namespace Exists
       run: |
         kubectl create namespace mern-app --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Update ExternalSecret with correct secret name
+      run: |
+        sed -i 's/key: my-docdb-mongo-uri/key: ${{ inputs.secret_name }}/' ./kubernetes-manifests/app/secret.yaml
+        cat ./kubernetes-manifests/app/secret.yaml
 
     - name: Apply Kubernetes manifests
       run: kubectl apply -f ./kubernetes-manifests/app/
