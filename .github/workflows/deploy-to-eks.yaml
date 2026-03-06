@@ -1,0 +1,57 @@
+name: Deploy to EKS
+
+on:
+  workflow_call:
+
+
+jobs:
+  deploy-to-eks:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS ( ODIC )
+      uses: aws-actions/configure-aws-credentials@v6.0.0
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ap-south-1
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v4
+
+    - name: Install metrics server
+      run: |
+        helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+        helm upgrade --install metrics-server metrics-server/metrics-server \
+        --namespace kube-system \
+        --set args="{--kubelet-insecure-tls}"
+
+    - name: Update Kubeconfig
+      run: aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
+
+    - name: Ensure Namespace Exists
+      run: |
+        kubectl create namespace mern-app --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Apply Kubernetes manifests
+      run: kubectl apply -f ./kubernetes-manifests/app/
+
+    - name: Update Images
+      run: |
+        kubectl set image deployment/frontend \
+        frontend=${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-frontend:${{ github.sha }} \
+        -n mern-app --record
+
+        kubectl set image deployment/backend \
+        backend=${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-backend:${{ github.sha }} \
+        -n mern-app --record
+
+    - name: Verify Rollout
+      run: |
+        kubectl rollout status deployment/frontend -n mern-app --timeout=120s || kubectl describe deployment/frontend -n mern-app
+        kubectl rollout status deployment/backend -n mern-app --timeout=120s || kubectl describe deployment/backend -n mern-app

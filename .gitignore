@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Build outputs
+frontend/build/
+backend/dist/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Docker
+docker-compose.override.yml
+docker-compose.yml
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

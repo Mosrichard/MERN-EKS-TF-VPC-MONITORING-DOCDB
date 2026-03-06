@@ -1,0 +1,39 @@
+name: CICD Deployment in EKS with Monitoring
+
+on:
+  push:
+    branches:
+    - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  terraform:
+    uses: ./.github/workflows/terraform.yaml
+    secrets: inherit
+
+  code-scan:
+    uses: ./.github/workflows/code-scan.yaml
+    secrets: inherit
+
+  build-scan-push:
+    needs:
+    - terraform
+    - code-scan
+    uses: ./.github/workflows/build-scan-push.yaml
+    secrets: inherit
+
+  deploy-to-eks:
+    needs:
+    - terraform
+    - build-scan-push
+    uses: ./.github/workflows/deploy-to-eks.yaml
+    secrets: inherit
+
+  observability:
+    needs: deploy-to-eks
+    uses: ./.github/workflows/observability.yaml
+    secrets: inherit

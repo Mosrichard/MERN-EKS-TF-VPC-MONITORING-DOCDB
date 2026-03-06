@@ -1,0 +1,35 @@
+name: Observability Setup
+
+on:
+  workflow_call:
+
+
+jobs:
+  observability:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS ( OIDC )
+      uses: aws-actions/configure-aws-credentials@v6.0.0
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ap-south-1
+
+    - name: Update Kubeconfig
+      run: aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v4
+
+    - name: Install Prometheus Stack
+      run: |
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+        helm upgrade --install monitoring prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace --set grafana.service.type=LoadBalancer
