@@ -129,6 +129,14 @@ resource "aws_security_group" "eks_nodes_sg" {
     protocol  = "-1"
     self      = true
   }
+  
+  ingress {
+    description = "Allow cluster to communicate with nodes"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
 
   egress {
     from_port   = 0
@@ -268,9 +276,18 @@ resource "aws_eks_node_group" "main" {
   }
 
   instance_types = ["t3.medium"]
+  
+  update_config {
+    max_unavailable = 1
+  }
+  
+  remote_access {
+    source_security_group_ids = [aws_security_group.eks_nodes_sg.id]
+  }
 
   depends_on = [
-    aws_iam_role_policy_attachment.node_policies
+    aws_iam_role_policy_attachment.node_policies,
+    aws_eks_cluster.main
   ]
 }
 
