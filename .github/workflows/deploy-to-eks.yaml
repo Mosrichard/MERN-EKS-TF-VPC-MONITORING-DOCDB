@@ -28,13 +28,6 @@ jobs:
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
 
-    - name: Install metrics server
-      run: |
-        helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
-        helm upgrade --install metrics-server metrics-server/metrics-server \
-        --namespace kube-system \
-        --set args="{--kubelet-insecure-tls}"
-
     - name: Update Kubeconfig
       run: aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
 
@@ -52,6 +45,22 @@ jobs:
           echo "Attempt $i: No nodes yet, waiting 20s..."
           sleep 20
         done
+        
+        # Final check
+        FINAL_COUNT=$(kubectl get nodes --no-headers 2>/dev/null | wc -l)
+        if [ "$FINAL_COUNT" -eq 0 ]; then
+          echo "ERROR: No nodes joined after 10 minutes"
+          echo "Checking node group status..."
+          aws eks describe-nodegroup --cluster-name my-eks-cluster --nodegroup-name standard-nodes --region ap-south-1
+          exit 1
+        fi
+
+    - name: Install metrics server
+      run: |
+        helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+        helm upgrade --install metrics-server metrics-server/metrics-server \
+        --namespace kube-system \
+        --set args="{--kubelet-insecure-tls}"
 
     - name: Ensure Namespace Exists
       run: |
