@@ -280,10 +280,6 @@ resource "aws_eks_node_group" "main" {
   update_config {
     max_unavailable = 1
   }
-  
-  remote_access {
-    source_security_group_ids = [aws_security_group.eks_nodes_sg.id]
-  }
 
   depends_on = [
     aws_iam_role_policy_attachment.node_policies,
