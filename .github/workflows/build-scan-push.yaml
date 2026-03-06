@@ -3,6 +3,7 @@ name: CI - Build, Scan & Push
 on:
   workflow_call:
 
+
 jobs:
   build-scan-push:
     runs-on: ubuntu-latest
@@ -28,7 +29,7 @@ jobs:
         docker build -t ${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-frontend:${{ github.sha }} ./frontend
 
     # --- Scan Stage (Non-Blocking) ---
-    
+
     - name: Scan Backend Image
       uses: aquasecurity/trivy-action@master
       with:

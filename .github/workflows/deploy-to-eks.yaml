@@ -38,6 +38,21 @@ jobs:
     - name: Update Kubeconfig
       run: aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
 
+    - name: Wait for nodes to be ready
+      run: |
+        echo "Waiting for nodes to join cluster..."
+        for i in {1..30}; do
+          NODE_COUNT=$(kubectl get nodes --no-headers 2>/dev/null | wc -l)
+          if [ "$NODE_COUNT" -ge 1 ]; then
+            echo "Nodes found: $NODE_COUNT"
+            kubectl get nodes
+            kubectl wait --for=condition=Ready nodes --all --timeout=300s
+            break
+          fi
+          echo "Attempt $i: No nodes yet, waiting 20s..."
+          sleep 20
+        done
+
     - name: Ensure Namespace Exists
       run: |
         kubectl create namespace mern-app --dry-run=client -o yaml | kubectl apply -f -
