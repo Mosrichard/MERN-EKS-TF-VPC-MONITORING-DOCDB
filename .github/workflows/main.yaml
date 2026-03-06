@@ -32,8 +32,6 @@ jobs:
     - build-scan-push
     uses: ./.github/workflows/deploy-to-eks.yaml
     secrets: inherit
-    with:
-      secret_name: ${{ needs.terraform.outputs.secret_name }}
 
   observability:
     needs: deploy-to-eks

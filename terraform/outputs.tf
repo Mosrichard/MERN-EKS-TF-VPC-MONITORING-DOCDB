@@ -6,21 +6,19 @@ output "eks_cluster_name" {
   value = aws_eks_cluster.main.name
 }
 
-output "docdb_endpoint" {
-  value = aws_docdb_cluster.main.endpoint
+output "rds_endpoint" {
+  value = aws_db_instance.mysql.endpoint
 }
 
-output "pod_secrets_role_arn" {
-  description = "IAM role ARN for application pods to access secrets"
-  value       = aws_iam_role.pod_secrets_role.arn
+output "rds_database_name" {
+  value = aws_db_instance.mysql.db_name
 }
 
-output "external_secrets_role_arn" {
-  description = "IAM role ARN for External Secrets Operator"
-  value       = aws_iam_role.external_secrets_role.arn
+output "rds_username" {
+  value = aws_db_instance.mysql.username
 }
 
-output "secrets_manager_secret_name" {
-  description = "Use this secret name in your ExternalSecret"
-  value       = aws_secretsmanager_secret.docdb_secret.name
+output "rds_password" {
+  value     = random_password.db_password.result
+  sensitive = true
 }

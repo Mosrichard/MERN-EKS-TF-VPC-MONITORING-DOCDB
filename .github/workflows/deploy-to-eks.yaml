@@ -2,10 +2,6 @@ name: Deploy to EKS
 
 on:
   workflow_call:
-    inputs:
-      secret_name:
-        required: true
-        type: string
 
 
 jobs:
@@ -66,10 +62,20 @@ jobs:
       run: |
         kubectl create namespace mern-app --dry-run=client -o yaml | kubectl apply -f -
 
-    - name: Update ExternalSecret with correct secret name
+    - name: Create Database Secret
       run: |
-        sed -i 's/key: my-docdb-mongo-uri/key: ${{ inputs.secret_name }}/' ./kubernetes-manifests/app/secret.yaml
-        cat ./kubernetes-manifests/app/secret.yaml
+        RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier my-mysql-db --region ap-south-1 --query 'DBInstances[0].Endpoint.Address' --output text)
+        RDS_PASSWORD=$(aws secretsmanager get-secret-value --secret-id terraform-rds-password --region ap-south-1 --query SecretString --output text 2>/dev/null || echo "")
+        
+        if [ -z "$RDS_PASSWORD" ]; then
+          echo "Warning: Could not retrieve password from Secrets Manager, using placeholder"
+          RDS_PASSWORD="PLACEHOLDER"
+        fi
+        
+        kubectl create secret generic db-secret \
+          --from-literal=DATABASE_URL="mysql://admin:${RDS_PASSWORD}@${RDS_ENDPOINT}:3306/merndb" \
+          -n mern-app \
+          --dry-run=client -o yaml | kubectl apply -f -
 
     - name: Apply Kubernetes manifests
       run: kubectl apply -f ./kubernetes-manifests/app/

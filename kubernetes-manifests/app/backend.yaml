@@ -13,18 +13,17 @@ spec:
       labels:
         app: backend
     spec:
-      serviceAccountName: my-app-sa
       containers:
       - name: backend
         image: mosrichard1234/cicd-tf-vpc-actions-backend:latest
         ports:
         - containerPort: 3000
         env:
-          - name: MONGO_URI
+          - name: DATABASE_URL
             valueFrom:
               secretKeyRef:
-                name: mongo-secret
-                key: MONGO_URI
+                name: db-secret
+                key: DATABASE_URL
         resources: 
           requests:
             cpu: 500m
