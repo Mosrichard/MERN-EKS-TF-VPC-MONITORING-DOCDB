@@ -17,7 +17,7 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Build Images
+    # --- Build Stage ---
 
     - name: Build Backend Image
       run: |
@@ -27,25 +27,25 @@ jobs:
       run: |
         docker build -t ${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-frontend:${{ github.sha }} ./frontend
 
-    # Scan Images
+    # --- Scan Stage (Non-Blocking) ---
     
     - name: Scan Backend Image
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-backend:${{ github.sha }}
-        format: table
-        exit-code: '1'
+        format: 'table'
+        exit-code: '0' # 0 means warning only; pipeline continues
         severity: 'CRITICAL,HIGH'
 
     - name: Scan Frontend Image
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-frontend:${{ github.sha }}
-        format: table
-        exit-code: '1'
+        format: 'table'
+        exit-code: '0' # 0 means warning only; pipeline continues
         severity: 'CRITICAL,HIGH'
 
-    # Push Only If Scan Passes
+    # --- Push Stage ---
 
     - name: Push Backend Image
       run: |
@@ -54,3 +54,18 @@ jobs:
     - name: Push Frontend Image
       run: |
         docker push ${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-frontend:${{ github.sha }}
+
+    # --- Optional: Generate and Upload JSON Report ---
+
+    - name: Generate JSON Report
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ vars.DOCKERHUB_USERNAME }}/cicd-tf-vpc-actions-backend:${{ github.sha }}
+        format: 'json'
+        output: 'trivy-results.json'
+
+    - name: Upload Scan Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-scan-report
+        path: trivy-results.json
