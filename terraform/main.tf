@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "ap-south-1"
-}
-
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -78,13 +74,16 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-# --- IAM Roles for EKS ---
 resource "aws_iam_role" "eks_cluster" {
   name = "eks-cluster-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17", Statement = [{
-      Action = "sts:AssumeRole", Effect = "Allow", Principal = { Service = "eks.amazonaws.com" }
-  }]})
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "eks.amazonaws.com" }
+    }]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
@@ -95,9 +94,13 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 resource "aws_iam_role" "nodes" {
   name = "eks-node-group-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17", Statement = [{
-      Action = "sts:AssumeRole", Effect = "Allow", Principal = { Service = "ec2.amazonaws.com" }
-  }]})
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "node_policies" {
@@ -143,6 +146,11 @@ resource "aws_eks_node_group" "private_nodes" {
   }
   
   depends_on = [aws_iam_role_policy_attachment.node_policies]
+}
+
+resource "aws_db_subnet_group" "db_subnets" {
+  name       = "db-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
 }
 
 resource "aws_security_group" "rds_sg" {
