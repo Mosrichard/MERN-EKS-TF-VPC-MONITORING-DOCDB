@@ -10,8 +10,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    outputs:
-      secret_name: ${{ steps.tf_output.outputs.secret_name }}
 
     steps:
 
@@ -44,11 +42,3 @@ jobs:
     - name: Terraform Apply
       working-directory: ./terraform
       run: terraform apply --auto-approve tfplan
-
-    - name: Get Secret Name
-      id: tf_output
-      working-directory: ./terraform
-      run: |
-        SECRET_NAME=$(terraform output -raw secrets_manager_secret_name)
-        echo "secret_name=$SECRET_NAME" >> $GITHUB_OUTPUT
-        echo "Secret name: $SECRET_NAME"
