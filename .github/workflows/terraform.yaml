@@ -41,7 +41,10 @@ jobs:
 
     - name: Terraform Destroy Old Resources
       working-directory: ./terraform
-      run: terraform destroy --auto-approve || true
+      run: |
+        terraform destroy -target=aws_eks_node_group.private_nodes --auto-approve || true
+        terraform destroy -target=aws_db_instance.mysql --auto-approve || true
+        terraform destroy --auto-approve || true
 
     - name: Terraform Apply
       working-directory: ./terraform
