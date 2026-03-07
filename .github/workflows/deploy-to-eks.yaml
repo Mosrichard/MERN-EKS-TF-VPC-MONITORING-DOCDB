@@ -25,7 +25,7 @@ jobs:
       uses: azure/setup-kubectl@v4
 
     - name: Update Kubeconfig
-      run: aws eks update-kubeconfig --name my-eks-cluster --region ap-south-1
+      run: aws eks update-kubeconfig --name main-cluster --region ap-south-1
 
     - name: Wait for nodes to be ready
       run: |
@@ -47,7 +47,7 @@ jobs:
         if [ "$FINAL_COUNT" -eq 0 ]; then
           echo "ERROR: No nodes joined after 10 minutes"
           echo "Checking node group status..."
-          aws eks describe-nodegroup --cluster-name my-eks-cluster --nodegroup-name standard-nodes --region ap-south-1
+          aws eks describe-nodegroup --cluster-name main-cluster --nodegroup-name private-nodes --region ap-south-1
           exit 1
         fi
 
@@ -65,12 +65,7 @@ jobs:
     - name: Create Database Secret
       run: |
         RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier my-mysql-db --region ap-south-1 --query 'DBInstances[0].Endpoint.Address' --output text)
-        RDS_PASSWORD=$(aws secretsmanager get-secret-value --secret-id terraform-rds-password --region ap-south-1 --query SecretString --output text 2>/dev/null || echo "")
-        
-        if [ -z "$RDS_PASSWORD" ]; then
-          echo "Warning: Could not retrieve password from Secrets Manager, using placeholder"
-          RDS_PASSWORD="PLACEHOLDER"
-        fi
+        RDS_PASSWORD=$(cd terraform && terraform output -raw rds_password)
         
         kubectl create secret generic db-secret \
           --from-literal=DATABASE_URL="mysql://admin:${RDS_PASSWORD}@${RDS_ENDPOINT}:3306/merndb" \
