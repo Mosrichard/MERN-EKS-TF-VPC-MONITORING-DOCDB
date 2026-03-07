@@ -43,8 +43,16 @@ jobs:
       working-directory: ./terraform
       run: |
         terraform destroy -target=aws_eks_node_group.private_nodes --auto-approve || true
+        sleep 30
+        terraform destroy -target=aws_eks_cluster.main --auto-approve || true
+        sleep 30
         terraform destroy -target=aws_db_instance.mysql --auto-approve || true
+        sleep 30
+        terraform destroy -target=aws_security_group.rds_sg --auto-approve || true
+        terraform destroy -target=aws_iam_role.nodes --auto-approve || true
+        terraform destroy -target=aws_iam_role.eks_cluster --auto-approve || true
         terraform destroy --auto-approve || true
+        sleep 30
 
     - name: Terraform Apply
       working-directory: ./terraform
