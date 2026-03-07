@@ -39,6 +39,10 @@ jobs:
       working-directory: ./terraform
       run: terraform plan -out=tfplan
 
+    - name: Terraform Destroy Old Resources
+      working-directory: ./terraform
+      run: terraform destroy --auto-approve || true
+
     - name: Terraform Apply
       working-directory: ./terraform
-      run: terraform apply --auto-approve tfplan
+      run: terraform apply --auto-approve
